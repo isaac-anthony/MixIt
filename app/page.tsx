@@ -15,6 +15,7 @@ import { SeasonalCard } from "@/components/SeasonalCard";
 import { BasicCard } from "@/components/BasicCard";
 import { RecipeModal } from "@/components/RecipeModal";
 import { Recipe, SeasonalCollection } from "@/lib/recipeData";
+import { AIAssistant } from "@/components/AIAssistant";
 
 export default function Home() {
   const { ingredients: selectedIngredients, addIngredient, removeIngredient } = useRefrigeratorStore();
@@ -27,6 +28,10 @@ export default function Home() {
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | SeasonalCollection | null>(null);
+  const [aiResponse, setAiResponse] = useState<string | any | null>(null);
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [isSearchComplete, setIsSearchComplete] = useState(false);
 
   const handleIngredientClick = (ingredient: Ingredient) => {
     if (selectedIngredients.some((ing) => ing.id === ingredient.id)) {
@@ -37,46 +42,148 @@ export default function Home() {
   };
 
   const handleMixIt = async () => {
+    console.log("handleMixIt called", { 
+      selectedIngredientsCount: selectedIngredients.length,
+      selectedIngredients: selectedIngredients.map(ing => ing.name)
+    });
+    
     if (selectedIngredients.length === 0) {
+      console.warn("No ingredients selected, showing alert");
       alert("Please select at least one ingredient!");
       return;
     }
 
+    console.log("Starting API call with ingredients:", selectedIngredients.map(ing => ing.name));
+    
     setIsLoading(true);
+    setIsLoadingAI(true);
+    setShowAIAssistant(true);
+    setIsSearchComplete(true);
+    setAiResponse(null);
     setRecipe(null);
 
+    // Build query from selected ingredients
+    const ingredientNames = selectedIngredients.map((ing) => ing.name).join(", ");
+    const query = `What cocktails can I make with ${ingredientNames}?`;
+    
+    console.log("API query:", query);
+
     try {
-      const response = await fetch("/api/generate", {
+      console.log("Sending API request to /api/chat");
+      console.log("Request body:", JSON.stringify({ 
+        query: query,
+        ingredients: selectedIngredients
+      }, null, 2));
+      
+      const response = await fetch("/api/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ ingredients: selectedIngredients }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          query: query,
+          ingredients: selectedIngredients
+        }),
       });
+      
+      console.log("API response received, status:", response.status);
+      console.log("Response headers:", Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error("Failed to generate recipe");
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Server error: ${response.status}`;
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
-      setRecipe(data);
+      console.log("API response data:", data);
       
-      // Scroll to recipe
-      setTimeout(() => {
-        const recipeElement = document.getElementById("recipe-section");
-        if (recipeElement) {
-          recipeElement.scrollIntoView({ behavior: "smooth" });
-        }
-      }, 100);
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to generate recipe. Please try again.");
+      if (data.error) {
+        console.error("API returned error:", data.error);
+        throw new Error(data.error);
+      }
+      
+      console.log("Setting AI response:", data.response);
+      setAiResponse(data.response);
+    } catch (error: any) {
+      console.error("AI chat error:", error);
+      setAiResponse(null);
+      
+      // Show more specific error message
+      const errorMessage = error?.message || "Failed to generate recipe suggestions. Please try again.";
+      
+      // Check if it's an API key issue
+      if (errorMessage.includes("API key") || errorMessage.includes("OPENAI_API_KEY")) {
+        alert("OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env.local file.");
+      } else {
+        alert(errorMessage);
+      }
     } finally {
       setIsLoading(false);
+      setIsLoadingAI(false);
     }
   };
 
-  // Filter ingredients based on search
+  const handleAIQuery = async (query: string) => {
+    if (!query.trim() || query.length < 3) {
+      return;
+    }
+
+    setIsLoading(true);
+    setIsLoadingAI(true);
+    setShowAIAssistant(true);
+    setIsSearchComplete(true);
+    setAiResponse(null);
+    setRecipe(null);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          query: query,
+          ingredients: selectedIngredients
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Server error: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      setAiResponse(data.response);
+    } catch (error: any) {
+      console.error("AI chat error:", error);
+      setAiResponse(null);
+      
+      const errorMessage = error?.message || "Failed to generate recipe suggestions. Please try again.";
+      if (errorMessage.includes("API key") || errorMessage.includes("OPENAI_API_KEY")) {
+        alert("OpenAI API key is not configured. Please add OPENAI_API_KEY to your .env.local file.");
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
+      setIsLoadingAI(false);
+    }
+  };
+
+  const handleViewAIRecipe = (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+  };
+
+  const handleSearchFocus = () => {
+    // Hide AI assistant when user focuses on search to clear the stage
+    setShowAIAssistant(false);
+    setIsSearchComplete(false);
+  };
+
+  // Filter ingredients for search bar dropdown only (not for card swap)
   const filteredIngredients = searchQuery
     ? ALL_INGREDIENTS.filter((ing) =>
         ing.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,8 +233,8 @@ export default function Home() {
 
       {/* Scroll Reveal Transition */}
       <ScrollReveal>
-        <section className="relative flex items-center justify-center px-4 py-32">
-          <p className="text-3xl sm:text-4xl md:text-5xl font-light text-center text-slate-900 max-w-4xl drop-shadow-sm relative z-10 font-bold" style={{
+        <section className="relative flex items-center justify-center px-4 pb-64 pt-32">
+          <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-slate-900 max-w-4xl drop-shadow-sm relative z-10" style={{
             textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
           }}>
             Tell us what you have. We'll tell you what to pour.
@@ -136,10 +243,10 @@ export default function Home() {
       </ScrollReveal>
 
       {/* The Tool Section */}
-      <section className="py-24 px-4 relative">
+      <section className="px-4 relative">
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Sticky Search Bar */}
-          <div className="mt-12 mb-20 relative z-50 overflow-visible">
+          <div className="relative z-50 overflow-visible">
             <StickySearchBar
             ingredients={ALL_INGREDIENTS}
             onSelectIngredient={handleIngredientClick}
@@ -147,11 +254,36 @@ export default function Home() {
             onSearchChange={setSearchQuery}
             onMixIt={handleMixIt}
             isLoading={isLoading}
+            onSearchFocus={handleSearchFocus}
+            onAIQuery={handleAIQuery}
           />
           </div>
 
+          {/* AI Assistant - appears below search bar, above CardSwap */}
+          {isSearchComplete && (
+            <div className="w-full max-w-4xl mx-auto px-4">
+              <AIAssistant
+                response={aiResponse}
+                isLoading={isLoadingAI}
+                isVisible={showAIAssistant}
+                onViewRecipe={handleViewAIRecipe}
+              />
+            </div>
+          )}
+
+          {/* Scroll Reveal Transition - Between AI Assistant and Card Swap */}
+          <ScrollReveal>
+            <section className="relative flex items-center justify-center px-4 pt-64 pb-32">
+              <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-slate-900 max-w-4xl drop-shadow-sm relative z-10" style={{
+                textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
+              }}>
+                Or browse our curated collections
+              </p>
+            </section>
+          </ScrollReveal>
+
           {/* Card Swap Section */}
-          <div className="mt-96 py-24 relative z-0 flex justify-center">
+          <div className="mt-32 py-24 relative z-0 flex justify-center">
             <div className="w-full max-w-5xl relative z-10">
               <CardSwap
                 width={800}
@@ -160,24 +292,23 @@ export default function Home() {
                 verticalDistance={100}
                 skewAmount={4}
               >
-              <Card customClass="w-full">
-                <IngredientsTable
-                  ingredients={filteredIngredients}
-                  selectedIngredients={selectedIngredients}
-                  onIngredientClick={handleIngredientClick}
-                  onClearSearch={() => setSearchQuery("")}
-                />
-              </Card>
-              <Card customClass="w-full">
-                <MostPopularCard onRecipeClick={(recipe) => setSelectedRecipe(recipe)} />
-              </Card>
-              <Card customClass="w-full">
-                <SeasonalCard onRecipeClick={(collection) => setSelectedRecipe(collection)} />
-              </Card>
-              <Card customClass="w-full">
-                <BasicCard onRecipeClick={(recipe) => setSelectedRecipe(recipe)} />
-              </Card>
-            </CardSwap>
+                <Card customClass="w-full">
+                  <IngredientsTable
+                    ingredients={ALL_INGREDIENTS}
+                    selectedIngredients={selectedIngredients}
+                    onIngredientClick={handleIngredientClick}
+                  />
+                </Card>
+                <Card customClass="w-full">
+                  <MostPopularCard onRecipeClick={setSelectedRecipe} />
+                </Card>
+                <Card customClass="w-full">
+                  <SeasonalCard onRecipeClick={setSelectedRecipe} />
+                </Card>
+                <Card customClass="w-full">
+                  <BasicCard onRecipeClick={setSelectedRecipe} />
+                </Card>
+              </CardSwap>
             </div>
           </div>
 

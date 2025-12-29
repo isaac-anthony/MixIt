@@ -5,6 +5,18 @@ import { X, Wine, GlassWater, Gauge } from "lucide-react";
 import { Recipe, SeasonalCollection } from "@/lib/recipeData";
 import { useEffect } from "react";
 
+// Helper function to parse and render bold text (**text**)
+const parseBoldText = (text: string) => {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      const boldText = part.slice(2, -2);
+      return <strong key={index} className="font-bold">{boldText}</strong>;
+    }
+    return <span key={index}>{part}</span>;
+  });
+};
+
 interface RecipeModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -123,10 +135,18 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
 
               {/* Content */}
               <div className="p-8 overflow-y-auto max-h-[calc(90vh-280px)]">
-                {/* Title */}
-                <h2 className="text-4xl font-bold text-slate-900 mb-6 tracking-tight">
-                  {recipeName}
-                </h2>
+                {/* Title with Category Pill */}
+                <div className="flex items-center gap-3 mb-6 flex-wrap">
+                  <h2 className="text-4xl font-bold text-slate-900 tracking-tight">
+                    {recipeName}
+                  </h2>
+                  {/* Category Pill */}
+                  {'type' in recipe && recipe.type && (
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100/50 text-purple-600 border border-purple-200/50 whitespace-nowrap">
+                      {recipe.type}
+                    </span>
+                  )}
+                </div>
 
                 {/* Two Column Layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -148,7 +168,7 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
                           <span className="font-mono text-sm text-purple-600 font-semibold">
                             {ing.amount && `${ing.amount} `}
                           </span>
-                          <span className="text-slate-800">{ing.name}</span>
+                          <span className="text-slate-800">{parseBoldText(ing.name)}</span>
                         </motion.li>
                       ))}
                     </ul>
@@ -175,7 +195,9 @@ export function RecipeModal({ isOpen, onClose, recipe }: RecipeModalProps) {
                           <span className="font-mono text-sm text-purple-600 flex-shrink-0 w-6">
                             {String(index + 1).padStart(2, '0')}.
                           </span>
-                          <span className="text-slate-800">{step}</span>
+                          <span className="text-slate-800">
+                            {parseBoldText(step.replace(/^\d+\.\s*/, '').trim())}
+                          </span>
                         </motion.li>
                       ))}
                     </ol>

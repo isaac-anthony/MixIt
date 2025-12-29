@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import OpenAI from "openai";
 
-// Mock data for testing - replace with actual OpenAI API call
+// Initialize OpenAI client
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
+
+// Mock data for testing - fallback if OpenAI is not configured
 const mockRecipes = [
   {
     title: "The Midnight Zest",
@@ -52,27 +58,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Replace with actual OpenAI API call
-    // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-    // const completion = await openai.chat.completions.create({
-    //   model: "gpt-4",
-    //   messages: [
-    //     {
-    //       role: "system",
-    //       content: "You are a professional mixologist. Generate creative cocktail recipes based on provided ingredients."
-    //     },
-    //     {
-    //       role: "user",
-    //       content: `Create a cocktail recipe using these ingredients: ${ingredients.map(i => i.name).join(", ")}`
-    //     }
-    //   ]
-    // });
+    // Use OpenAI if available, otherwise fall back to mock data
+    if (openai) {
+      try {
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4",
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional mixologist. Generate creative cocktail recipes based on provided ingredients. Return a JSON object with: title (string), image (a relevant Unsplash URL for cocktails), steps (array of strings), and explanation (string describing why the recipe works)."
+            },
+            {
+              role: "user",
+              content: `Create a unique cocktail recipe using these ingredients: ${ingredients.map((i: { name: string }) => i.name).join(", ")}. Make it creative and professional.`
+            }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.8
+        });
 
-    // For now, return a mock response
-    // Select a random mock recipe or generate based on ingredients
+        const recipeContent = completion.choices[0].message.content;
+        if (recipeContent) {
+          const recipe = JSON.parse(recipeContent);
+          return NextResponse.json(recipe, { status: 200 });
+        }
+      } catch (error) {
+        console.error("OpenAI API error:", error);
+        // Fall through to mock data if API fails
+      }
+    }
+
+    // Fallback to mock data if OpenAI is not configured or fails
     const randomRecipe = mockRecipes[Math.floor(Math.random() * mockRecipes.length)];
-    
-    // You could also customize the mock recipe based on ingredients
     const ingredientNames = ingredients.map((ing: { name: string }) => ing.name).join(", ");
     const customizedRecipe = {
       ...randomRecipe,

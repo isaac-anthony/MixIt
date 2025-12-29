@@ -32,12 +32,12 @@ export default function ScrollReveal({ children, className = '' }: ScrollRevealP
         opacity: 1,
         y: 0,
         filter: 'blur(0px)',
-        duration: 1.2,
+        duration: 2.0,
         ease: 'power3.out',
         scrollTrigger: {
           trigger: element,
-          start: 'top 80%',
-          end: 'top 50%',
+          start: 'top 85%',
+          end: 'top 40%',
           scrub: true,
         },
       }

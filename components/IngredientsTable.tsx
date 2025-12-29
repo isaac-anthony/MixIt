@@ -168,12 +168,14 @@ export function IngredientsTable({
                       transition={{ duration: 0.2, ease: "easeOut" }}
                       onClick={() => onIngredientClick(ingredient)}
                       whileHover={{ 
-                        scale: 1.01,
+                        scale: 1.02,
+                        y: -2,
+                        boxShadow: "0 8px 24px rgba(168,85,247,0.25)"
                       }}
                       className={cn(
                         "grid grid-cols-[50px_1fr_100px_50px] gap-4 px-4 py-3.5 h-14",
-                        "border-b border-white/10 cursor-pointer transition-all duration-200",
-                        "hover:bg-white/40 hover:shadow-[0_2px_8px_rgba(168,85,247,0.1)]",
+                        "border-b border-white/10 cursor-pointer transition-all duration-300",
+                        "hover:bg-white/60 hover:border-purple-200/30",
                         selected && "bg-purple-50/30 border-purple-200/20"
                       )}
                     >

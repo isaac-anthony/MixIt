@@ -15,6 +15,7 @@ export interface Recipe {
   servingSize?: string;
   glassware?: string;
   abv?: string;
+  type?: 'Classic' | 'Custom Fusion' | 'Seasonal'; // Category type for AI-generated recipes
 }
 
 export const mostPopularRecipes: Recipe[] = [
