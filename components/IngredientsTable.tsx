@@ -28,8 +28,8 @@ export function IngredientsTable({
   onIngredientClick,
   onClearSearch,
 }: IngredientsTableProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [isContainerExpanded, setIsContainerExpanded] = useState<boolean>(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("spirits");
+  const [isContainerExpanded, setIsContainerExpanded] = useState<boolean>(true);
 
   const isSelected = (ingredient: Ingredient) => {
     return selectedIngredients.some((ing) => ing.id === ingredient.id);
@@ -41,45 +41,42 @@ export function IngredientsTable({
       : ingredients.filter((ing) => ing.category === selectedCategory);
 
   const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      spirits: "bg-purple-100/50 text-purple-700",
-      mixers: "bg-blue-100/50 text-blue-700",
-      garnishes: "bg-green-100/50 text-green-700",
-      pantry: "bg-amber-100/50 text-amber-700",
-    };
-    return colors[category] || "bg-gray-100/50 text-gray-600";
+    // Enterprise style - no colors, just subtle background
+    return "bg-slate-100/50 text-slate-700";
   };
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto rounded-[48px] border border-white/20 bg-white/10 backdrop-blur-2xl shadow-[0_30px_80px_rgba(0,0,0,0.2),0_0_60px_rgba(168,85,247,0.25)] overflow-hidden z-10">
+    <div className="relative w-full max-w-4xl mx-auto rounded-[48px] glass-specular shadow-[0_30px_80px_rgba(0,0,0,0.2),0_0_60px_rgba(168,85,247,0.25)] overflow-hidden z-10 h-full flex flex-col" style={{ backgroundColor: `rgba(255, 255, 255, var(--card-bg-opacity, 0.5))` }}>
       {/* Collapsible Header */}
-      <button
-        onClick={() => setIsContainerExpanded(!isContainerExpanded)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/10 transition-colors"
-      >
-        <h2 className="text-lg font-semibold text-slate-900">Or browse ingredients</h2>
-        <motion.div
-          animate={{ rotate: isContainerExpanded ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
+      <div className="w-full px-6 py-4 flex items-center justify-between hover:bg-white/10 transition-colors">
+        <h2 className="text-xl font-bold text-black">Browse Ingredients</h2>
+        <button
+          onClick={() => setIsContainerExpanded(!isContainerExpanded)}
+          className="p-2 hover:bg-white/20 rounded-lg transition-colors"
         >
-          <ChevronDown className="w-5 h-5 text-slate-600" />
-        </motion.div>
-      </button>
+          <motion.div
+            animate={{ rotate: isContainerExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-5 h-5 text-slate-600" />
+          </motion.div>
+        </button>
+      </div>
 
       {/* Collapsible Content */}
       <motion.div
         initial={false}
         animate={{
-          maxHeight: isContainerExpanded ? "800px" : "0px",
+          maxHeight: isContainerExpanded ? "calc(100% - 60px)" : "0px",
           opacity: isContainerExpanded ? 1 : 0,
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="overflow-hidden"
+        className="overflow-hidden flex-1"
       >
-        <div className="flex p-6 gap-6 min-h-[600px]">
+        <div className="flex p-6 gap-6 h-full overflow-y-auto scrollbar-hide">
           {/* Left Sidebar - Separate Rounded Container */}
           <div className="w-64 flex-shrink-0">
-        <div className="bg-white/30 rounded-[32px] overflow-hidden h-full p-6 shadow-[0_8px_24px_rgba(0,0,0,0.1),0_0_20px_rgba(168,85,247,0.1)] border border-white/20 backdrop-blur-md">
+        <div className="bg-white/50 rounded-[32px] overflow-hidden h-full p-6 shadow-[0_8px_24px_rgba(0,0,0,0.1),0_0_20px_rgba(168,85,247,0.1)] border border-white/20 backdrop-blur-md">
           <div className="flex flex-col gap-2 h-full">
             <div className="text-xs font-semibold text-slate-900 uppercase tracking-[0.15em] mb-4 px-2 flex items-center h-6">
               Categories
@@ -119,9 +116,9 @@ export function IngredientsTable({
 
           {/* Right Table */}
           <div className="flex-1 min-w-0">
-            <div className="bg-white/30 rounded-[32px] overflow-hidden h-full p-1 shadow-[0_8px_24px_rgba(0,0,0,0.1),0_0_20px_rgba(168,85,247,0.1)] border border-white/20 backdrop-blur-md">
+            <div className="bg-white/50 rounded-[32px] overflow-hidden h-full p-1 shadow-[0_8px_24px_rgba(0,0,0,0.1),0_0_20px_rgba(168,85,247,0.1)] border border-white/20 backdrop-blur-md">
               {/* Scrollable Content */}
-              <div className="max-h-[600px] overflow-y-auto scrollbar-hide">
+              <div className="max-h-[800px] overflow-y-auto scrollbar-hide">
                 {/* Table Header */}
                 <div className="grid grid-cols-[50px_1fr_100px_50px] gap-4 px-4 py-4 border-b border-white/10 sticky top-0 z-20 backdrop-blur-md bg-white/50">
                   <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
@@ -168,12 +165,11 @@ export function IngredientsTable({
                       key={ingredient.id}
                       initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.15 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
                       onClick={() => onIngredientClick(ingredient)}
                       whileHover={{ 
                         scale: 1.01,
                       }}
-                      transition={{ duration: 0.2, ease: "easeOut" }}
                       className={cn(
                         "grid grid-cols-[50px_1fr_100px_50px] gap-4 px-4 py-3.5 h-14",
                         "border-b border-white/10 cursor-pointer transition-all duration-200",
@@ -222,7 +218,7 @@ export function IngredientsTable({
                               stiffness: 500,
                               damping: 25,
                             }}
-                            className="w-5 h-5 rounded-full bg-slate-900 flex items-center justify-center shadow-sm"
+                            className="w-5 h-5 rounded-full bg-purple-600 flex items-center justify-center shadow-sm"
                           >
                             <motion.div
                               initial={{ scale: 0, rotate: -90 }}

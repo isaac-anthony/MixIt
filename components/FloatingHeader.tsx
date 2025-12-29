@@ -47,7 +47,7 @@ export function FloatingHeader({ onGetStarted }: FloatingHeaderProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={onGetStarted || scrollToSearch}
-            className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-900 transition-colors shadow-md hover:shadow-lg"
+            className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-900 transition-colors shadow-md hover:shadow-lg shadow-purple-500/20"
           >
             Sign Up
           </motion.button>

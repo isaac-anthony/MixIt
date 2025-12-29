@@ -1,0 +1,23 @@
+.card-swap-container {
+  position: relative;
+  margin: 0 auto;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  height: 700px;
+  display: grid;
+  place-items: center;
+}
+
+.card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  cursor: pointer;
+  will-change: transform;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transform-origin: center -100%;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(20px);
+}
+

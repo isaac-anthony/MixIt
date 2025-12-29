@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Ingredient } from "@/store/useRefrigeratorStore";
 import { useRefrigeratorStore } from "@/store/useRefrigeratorStore";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 
 interface StickySearchBarProps {
   ingredients: Ingredient[];
@@ -32,6 +32,44 @@ export function StickySearchBar({
   const [isOpen, setIsOpen] = useState(false);
   const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
+  const pulseControls = useAnimation();
+  const pingControls = useAnimation();
+  const previousCountRef = useRef(selectedIngredients.length);
+
+  // Pulse animation loop
+  useEffect(() => {
+    const pulseSequence = async () => {
+      while (true) {
+        await pulseControls.start({
+          boxShadow: '0 0 20px rgba(124, 58, 237, 0.3)',
+          transition: { duration: 1.5, ease: 'easeInOut' }
+        });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await pulseControls.start({
+          boxShadow: '0 0 20px rgba(124, 58, 237, 0.5)',
+          transition: { duration: 1.5, ease: 'easeInOut' }
+        });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      }
+    };
+    pulseSequence();
+  }, [pulseControls]);
+
+  // Ping animation when ingredient is added
+  useEffect(() => {
+    if (selectedIngredients.length > previousCountRef.current) {
+      pingControls.start({
+        scale: [1, 1.1, 1],
+        boxShadow: [
+          '0 0 20px rgba(124, 58, 237, 0.3)',
+          '0 0 40px rgba(124, 58, 237, 0.6)',
+          '0 0 20px rgba(124, 58, 237, 0.3)'
+        ],
+        transition: { duration: 0.5, ease: 'easeOut' }
+      });
+    }
+    previousCountRef.current = selectedIngredients.length;
+  }, [selectedIngredients.length, pingControls]);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -65,12 +103,15 @@ export function StickySearchBar({
   return (
     <div
       id="search-section"
-      className="py-4 bg-white/80 backdrop-blur-md shadow-sm relative z-50"
+      className="py-4 backdrop-blur-md shadow-sm relative z-50 overflow-visible"
+      style={{
+        background: 'rgba(255, 255, 255, 0.1)'
+      }}
     >
-      <div ref={searchRef} className="relative mx-auto max-w-4xl px-4 z-50">
+      <div ref={searchRef} className="relative mx-auto max-w-4xl px-4 z-50 overflow-visible">
         <div className="flex items-center gap-3">
           {/* Search Input */}
-          <div className="relative flex-1 z-50">
+          <div className="relative flex-1 z-50 overflow-visible">
             <div className="relative flex items-center group">
               <Search className="absolute left-6 h-6 w-6 text-gray-400 z-10" />
               <input
@@ -83,12 +124,12 @@ export function StickySearchBar({
                 }}
                 className={cn(
                   "w-full h-16 pl-14 pr-24 rounded-2xl relative z-10",
-                  "bg-white border border-slate-200",
+                  "bg-white border-2 border-slate-900",
                   "text-black text-lg placeholder:text-gray-400",
-                  "focus:outline-none focus:border-transparent focus:ring-1 focus:ring-purple-500/30",
-                  "focus:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] focus:scale-[1.005]",
+                  "focus:outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/20",
+                  "focus:shadow-[0_0_40px_-10px_rgba(168,85,247,0.4)] focus:scale-[1.005]",
                   "focus:placeholder:opacity-50",
-                  "shadow-xl hover:shadow-2xl transition-all duration-200"
+                  "shadow-[0_0_20px_rgba(168,85,247,0.3)] hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all duration-200"
                 )}
               />
               {/* Keyboard Shortcut Badge */}
@@ -113,7 +154,7 @@ export function StickySearchBar({
             </div>
 
             {isOpen && filteredIngredients.length > 0 && (
-              <div className="absolute mt-4 w-full bg-white/95 backdrop-blur-xl border border-slate-200 rounded-2xl shadow-2xl max-h-96 overflow-y-auto z-[60] ring-1 ring-black/5">
+              <div className="absolute mt-4 w-full bg-white/30 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl max-h-96 overflow-y-auto z-[100] ring-1 ring-black/5" style={{ position: 'absolute', zIndex: 100 }}>
                 {filteredIngredients.map((ingredient) => (
                   <button
                     key={ingredient.id}
@@ -141,16 +182,26 @@ export function StickySearchBar({
             whileTap={{ scale: 0.98 }}
             transition={{ duration: 0.2 }}
           >
-            <Button
-              onClick={onMixIt}
-              disabled={selectedIngredients.length === 0 || isLoading}
-              className={cn(
-                "h-16 px-8 rounded-xl text-lg font-medium whitespace-nowrap relative",
-                "bg-purple-600 hover:bg-purple-700 text-slate-900",
-                "shadow-lg hover:shadow-[0_0_30px_rgba(168,85,247,0.6)] transition-all duration-200",
-                selectedIngredients.length === 0 && "opacity-50 cursor-not-allowed"
-              )}
+            <motion.div
+              animate={pulseControls}
+              style={{
+                boxShadow: '0 0 20px rgba(124, 58, 237, 0.3)',
+              }}
             >
+              <motion.div
+                animate={pingControls}
+              >
+                <Button
+                  onClick={onMixIt}
+                  disabled={selectedIngredients.length === 0 || isLoading}
+                  className={cn(
+                    "h-16 px-8 rounded-xl text-lg font-medium whitespace-nowrap relative",
+                    "bg-slate-900 hover:bg-slate-800 text-white",
+                    "shadow-[0_4px_16px_rgba(0,0,0,0.2),0_8px_24px_rgba(0,0,0,0.15)]",
+                    "transition-all duration-200",
+                    selectedIngredients.length === 0 && "opacity-50 cursor-not-allowed"
+                  )}
+                >
             {selectedIngredients.length > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white text-black text-xs font-semibold">
                 {selectedIngredients.length}
@@ -158,6 +209,8 @@ export function StickySearchBar({
             )}
             {isLoading ? "Mixing..." : "Mix It"}
           </Button>
+              </motion.div>
+            </motion.div>
           </motion.div>
         </div>
       </div>

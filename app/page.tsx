@@ -9,6 +9,12 @@ import { StickySearchBar } from "@/components/StickySearchBar";
 import ScrollReveal from "@/components/ui/ScrollReveal";
 import { useRefrigeratorStore, Ingredient } from "@/store/useRefrigeratorStore";
 import { initialIngredients as ALL_INGREDIENTS } from "@/lib/data";
+import CardSwap, { Card } from "@/components/CardSwap";
+import { MostPopularCard } from "@/components/MostPopularCard";
+import { SeasonalCard } from "@/components/SeasonalCard";
+import { BasicCard } from "@/components/BasicCard";
+import { RecipeModal } from "@/components/RecipeModal";
+import { Recipe, SeasonalCollection } from "@/lib/recipeData";
 
 export default function Home() {
   const { ingredients: selectedIngredients, addIngredient, removeIngredient } = useRefrigeratorStore();
@@ -20,6 +26,7 @@ export default function Home() {
     explanation: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | SeasonalCollection | null>(null);
 
   const handleIngredientClick = (ingredient: Ingredient) => {
     if (selectedIngredients.some((ing) => ing.id === ingredient.id)) {
@@ -77,7 +84,40 @@ export default function Home() {
     : ALL_INGREDIENTS;
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="relative min-h-screen overflow-hidden" style={{
+      background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0.90) 0%, rgba(230, 220, 255, 0.95) 15%, rgba(220, 230, 255, 0.95) 35%, rgba(210, 220, 255, 0.95) 50%, rgba(220, 230, 255, 0.95) 65%, rgba(230, 220, 255, 0.95) 85%, rgba(255, 255, 255, 0.90) 100%)'
+    }}>
+      {/* Fixed Aurora Orbs - Infinite Depth */}
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        {/* Top Left: Purple */}
+        <div 
+          className="absolute -top-[400px] -left-[400px] w-[800px] h-[800px] rounded-full"
+          style={{
+            background: '#7c3aed',
+            opacity: 0.15,
+            filter: 'blur(1000px)',
+          }}
+        />
+        {/* Bottom Right: Deep Blue */}
+        <div 
+          className="absolute -bottom-[450px] -right-[450px] w-[900px] h-[900px] rounded-full"
+          style={{
+            background: '#2563eb',
+            opacity: 0.10,
+            filter: 'blur(1200px)',
+          }}
+        />
+        {/* Center: Subtle Magenta (behind Search) */}
+        <div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full"
+          style={{
+            background: '#d946ef',
+            opacity: 0.05,
+            filter: 'blur(800px)',
+          }}
+        />
+      </div>
+
       {/* Floating Header */}
       <FloatingHeader />
 
@@ -86,18 +126,20 @@ export default function Home() {
 
       {/* Scroll Reveal Transition */}
       <ScrollReveal>
-        <section className="flex items-center justify-center px-4 py-8">
-          <p className="text-3xl sm:text-4xl md:text-5xl font-light text-center text-gray-700 max-w-4xl drop-shadow-sm">
+        <section className="relative flex items-center justify-center px-4 py-32">
+          <p className="text-3xl sm:text-4xl md:text-5xl font-light text-center text-slate-900 max-w-4xl drop-shadow-sm relative z-10 font-bold" style={{
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
+          }}>
             Tell us what you have. We'll tell you what to pour.
           </p>
         </section>
       </ScrollReveal>
 
       {/* The Tool Section */}
-      <section className="py-8 px-4 relative overflow-visible">
-        <div className="max-w-7xl mx-auto overflow-visible">
+      <section className="py-24 px-4 relative">
+        <div className="max-w-7xl mx-auto relative z-10">
           {/* Sticky Search Bar */}
-          <div className="mt-12 relative z-50 overflow-visible">
+          <div className="mt-12 mb-20 relative z-50 overflow-visible">
             <StickySearchBar
             ingredients={ALL_INGREDIENTS}
             onSelectIngredient={handleIngredientClick}
@@ -108,14 +150,35 @@ export default function Home() {
           />
           </div>
 
-          {/* Ingredients Table */}
-          <div className="mt-12 relative z-0">
-            <IngredientsTable
-              ingredients={filteredIngredients}
-              selectedIngredients={selectedIngredients}
-              onIngredientClick={handleIngredientClick}
-              onClearSearch={() => setSearchQuery("")}
-            />
+          {/* Card Swap Section */}
+          <div className="mt-96 py-24 relative z-0 flex justify-center">
+            <div className="w-full max-w-5xl relative z-10">
+              <CardSwap
+                width={800}
+                height={700}
+                cardDistance={120}
+                verticalDistance={100}
+                skewAmount={4}
+              >
+              <Card customClass="w-full">
+                <IngredientsTable
+                  ingredients={filteredIngredients}
+                  selectedIngredients={selectedIngredients}
+                  onIngredientClick={handleIngredientClick}
+                  onClearSearch={() => setSearchQuery("")}
+                />
+              </Card>
+              <Card customClass="w-full">
+                <MostPopularCard onRecipeClick={(recipe) => setSelectedRecipe(recipe)} />
+              </Card>
+              <Card customClass="w-full">
+                <SeasonalCard onRecipeClick={(collection) => setSelectedRecipe(collection)} />
+              </Card>
+              <Card customClass="w-full">
+                <BasicCard onRecipeClick={(recipe) => setSelectedRecipe(recipe)} />
+              </Card>
+            </CardSwap>
+            </div>
           </div>
 
           {/* Recipe Output */}
@@ -127,6 +190,12 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Recipe Modal */}
+      <RecipeModal
+        isOpen={!!selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+        recipe={selectedRecipe}
+      />
     </div>
   );
 }

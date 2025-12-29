@@ -35,7 +35,7 @@ export function Hero() {
   }, []);
 
   return (
-    <section className="relative h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-white">
+    <section className="relative h-screen flex flex-col items-center justify-center overflow-hidden">
       {/* Dot Grid Pattern */}
       <div 
         className="absolute inset-0 -z-20"
@@ -52,12 +52,13 @@ export function Hero() {
       
       {/* Aurora Mesh Gradients */}
       <div className="absolute inset-0 overflow-hidden -z-10">
-        <div className="bg-purple-200/30 w-[600px] h-[600px] blur-[120px] rounded-full absolute -top-40 -left-20" />
-        <div className="bg-blue-200/30 w-[500px] h-[500px] blur-[100px] rounded-full absolute top-20 right-0" />
+        <div className="bg-purple-400/35 w-[900px] h-[900px] blur-[160px] rounded-full absolute -top-40 -left-20" />
+        <div className="bg-blue-400/30 w-[800px] h-[800px] blur-[150px] rounded-full absolute top-20 right-0" />
+        <div className="bg-purple-300/25 w-[700px] h-[700px] blur-[140px] rounded-full absolute bottom-0 left-1/2 -translate-x-1/2" />
       </div>
 
-      {/* Hero Animation Video - Center Stage */}
-      <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden flex items-center justify-center">
+      {/* Hero Animation Video - Full Screen */}
+      <div className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none overflow-hidden">
         <video
           autoPlay
           loop
@@ -66,12 +67,10 @@ export function Hero() {
           preload="auto"
           className="w-full h-full object-cover"
           style={{
-            opacity: 0.85,
-            objectPosition: 'center 15%',
-            maskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 90%)',
-            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 40%, transparent 90%)',
-            minHeight: '100%',
-            minWidth: '100%',
+            opacity: 0.9,
+            objectPosition: 'center center',
+            maskImage: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, transparent 100%)',
+            WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 50%, rgba(0,0,0,0.8) 70%, transparent 100%)',
           }}
         >
           <source src="/hero-splash.mp4" type="video/mp4" />
@@ -79,13 +78,13 @@ export function Hero() {
       </div>
       
       {/* Typography - Below the Video */}
-      <div className="relative z-10 text-center px-4 w-full mt-auto pb-16">
+      <div className="relative z-10 text-center px-4 w-full mt-auto pt-8 pb-16">
         {/* Primary Tagline - Now the Main H1 */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-4xl sm:text-5xl font-bold text-slate-900 mb-6"
+          className="text-4xl sm:text-5xl font-bold text-white mb-6 tracking-tighter"
         >
           Never think about how to make a drink again.
         </motion.h1>
@@ -99,7 +98,10 @@ export function Hero() {
         >
           <motion.span
             layout
-            className="inline-block min-w-[4ch] text-right text-slate-900"
+            className="inline-block min-w-[4ch] text-right text-slate-900 font-bold"
+            style={{
+              textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 rgba(255, 255, 255, 0.5)',
+            }}
           >
             <CountUp
               key={iteration}
@@ -107,11 +109,13 @@ export function Hero() {
               from={0}
               duration={3}
               delay={iteration === 0 ? 0.5 : 0}
-              className="text-slate-900"
+              className="text-slate-900 font-bold"
               onEnd={handleCountEnd}
             />
           </motion.span>
-          <span className="text-slate-900 text-2xl sm:text-3xl md:text-4xl font-light ml-4">
+          <span className="text-slate-900 text-2xl sm:text-3xl md:text-4xl font-light ml-4 font-bold" style={{
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
+          }}>
             Endless Ideas, Endless Drinks
           </span>
         </motion.div>
