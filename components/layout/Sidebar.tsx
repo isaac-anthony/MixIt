@@ -49,3 +49,4 @@ export function Sidebar({ onCategorySelect, selectedCategory }: SidebarProps) {
   );
 }
 
+

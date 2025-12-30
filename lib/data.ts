@@ -79,3 +79,4 @@ export const initialIngredients: Ingredient[] = [
   { id: "coffee-beans", name: "Coffee Beans", category: "garnishes", image: getIngredientImage("Coffee Beans") },
 ];
 
+

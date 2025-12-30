@@ -243,7 +243,7 @@ export default function Home() {
       </ScrollReveal>
 
       {/* The Tool Section */}
-      <section className="px-4 relative">
+      <section id="search-section" className="px-4 relative">
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Sticky Search Bar */}
           <div className="relative z-50 overflow-visible">
@@ -283,7 +283,7 @@ export default function Home() {
           </ScrollReveal>
 
           {/* Card Swap Section */}
-          <div className="mt-32 py-24 relative z-0 flex justify-center">
+          <div id="collections-section" className="mt-32 py-24 relative z-0 flex justify-center">
             <div className="w-full max-w-5xl relative z-10">
               <CardSwap
                 width={800}
