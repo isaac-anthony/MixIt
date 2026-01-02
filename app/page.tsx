@@ -273,7 +273,7 @@ export default function Home() {
 
           {/* Scroll Reveal Transition - Between AI Assistant and Card Swap */}
           <ScrollReveal>
-            <section className="relative flex items-center justify-center px-4 pt-64 pb-32">
+            <section className="relative flex items-center justify-center px-4 pb-64 pt-32">
               <p className="text-3xl sm:text-4xl md:text-5xl font-bold text-center text-slate-900 max-w-4xl drop-shadow-sm relative z-10" style={{
                 textShadow: '0 2px 8px rgba(0, 0, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.15)',
               }}>

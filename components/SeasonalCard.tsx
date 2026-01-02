@@ -127,23 +127,25 @@ export function SeasonalCard({ onRecipeClick }: SeasonalCardProps = {}) {
           {/* Right Table */}
           <div className="flex-1 min-w-0">
             <div className="bg-white/50 rounded-[32px] overflow-hidden h-full p-1 shadow-[0_8px_24px_rgba(0,0,0,0.1),0_0_20px_rgba(168,85,247,0.1)] border border-white/20 backdrop-blur-md">
-              <div className="max-h-[800px] overflow-y-auto scrollbar-hide">
+              <div className="max-h-[800px] overflow-y-auto overflow-x-auto scrollbar-hide relative">
                 {/* Table Header */}
-                <div className="grid grid-cols-[50px_120px_1fr_200px_200px] gap-4 px-4 py-4 border-b border-white/10 sticky top-0 z-20 backdrop-blur-md bg-white/50">
-                  <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
-                    Image
-                  </div>
-                  <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
-                    Season
-                  </div>
-                  <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
-                    Collection
-                  </div>
-                  <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
-                    Key Drinks
-                  </div>
-                  <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
-                    Ingredients
+                <div className="sticky top-0 z-20 backdrop-blur-md bg-white/50 border-b border-white/10" style={{ width: 'max-content', minWidth: '100%' }}>
+                  <div className="grid grid-cols-[50px_120px_1fr_200px_200px] gap-4 px-4 py-4 min-w-max">
+                    <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
+                      Image
+                    </div>
+                    <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
+                      Season
+                    </div>
+                    <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
+                      Collection
+                    </div>
+                    <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
+                      Key Drinks
+                    </div>
+                    <div className="text-xs font-semibold text-slate-600 uppercase tracking-[0.1em] leading-tight flex items-center h-6">
+                      Ingredients
+                    </div>
                   </div>
                 </div>
 
@@ -166,10 +168,21 @@ export function SeasonalCard({ onRecipeClick }: SeasonalCardProps = {}) {
                       }}
                       data-recipe-click
                       className={cn(
-                        "grid grid-cols-[50px_120px_1fr_200px_200px] gap-4 px-4 py-4 h-auto min-h-[80px]",
+                        "group grid grid-cols-[50px_120px_1fr_200px_200px] gap-4 px-4 py-4 h-auto min-h-[80px] min-w-max",
                         "border-b border-white/10 cursor-pointer transition-all duration-300",
                         "hover:bg-white/60 hover:border-purple-200/30"
                       )}
+                      style={{
+                        backgroundColor: 'transparent'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.6)';
+                        e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                      }}
                     >
                       {/* Image Column */}
                       <div className="flex items-center">

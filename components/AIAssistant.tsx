@@ -266,37 +266,81 @@ export function AIAssistant({ response, isLoading, isVisible, onViewRecipe }: AI
     // If we have some recipes but fewer than 5, create creative variations with unique names
     const types: ('Classic' | 'Custom Fusion' | 'Seasonal')[] = ['Classic', 'Custom Fusion', 'Seasonal', 'Classic', 'Custom Fusion'];
     
-    // Creative name transformations based on the original recipe
-    const createVariationName = (originalName: string, index: number): string => {
-      const nameLower = originalName.toLowerCase();
-      const variations = [
-        // Tropical/Island themes
-        nameLower.includes('tropical') || nameLower.includes('punch') || nameLower.includes('island') 
-          ? ['Caribbean Breeze', 'Island Paradise', 'Tropical Sunset', 'Beachside Cooler', 'Ocean Breeze']
-        // Fruit-based
-        : nameLower.includes('fruit') || nameLower.includes('berry') || nameLower.includes('citrus')
-          ? ['Citrus Burst', 'Berry Bliss', 'Fruit Fusion', 'Tropical Medley', 'Zesty Refresher']
-        // Classic cocktails
-        : nameLower.includes('martini') || nameLower.includes('margarita') || nameLower.includes('sour')
-          ? ['Modern Classic', 'Elevated Twist', 'Refined Blend', 'Sophisticated Mix', 'Premium Blend']
-        // Spiced/Warm
-        : nameLower.includes('spice') || nameLower.includes('cinnamon') || nameLower.includes('warm')
-          ? ['Spiced Delight', 'Cozy Blend', 'Warm Embrace', 'Aromatic Mix', 'Hearty Blend']
-        // Default creative names
-        : ['Signature Blend', 'Crafted Mix', 'Artisan Creation', 'Premium Mix', 'Refined Blend']
-      ];
-      
-      return variations[0][index % variations[0].length];
+    // Name generation based on drink type
+    const createVariationName = (originalName: string, index: number, type: 'Classic' | 'Custom Fusion' | 'Seasonal', ingredients?: string[]): string => {
+      if (type === 'Classic') {
+        // Use real, popular bar drink names - these are actual drinks sold at bars
+        const classicDrinks = ['Old Fashioned', 'Manhattan', 'Negroni', 'Daiquiri', 'Whiskey Sour', 'Tom Collins', 'Sidecar', 'French 75', 'Sazerac', 'Mint Julep', 'Cosmopolitan', 'Moscow Mule', 'Paloma', 'Mai Tai', 'Bloody Mary', 'Mimosa', 'Bellini', 'Aperol Spritz', 'Gin and Tonic', 'Martini', 'Caipirinha', 'Pisco Sour', 'White Russian', 'Black Russian', 'Long Island Iced Tea', 'Tequila Sunrise', 'Dark \'n Stormy', 'Cuba Libre', 'Gimlet', 'Rusty Nail'];
+        return classicDrinks[index % classicDrinks.length];
+      } else if (type === 'Seasonal') {
+        // Use season-based names - season must be obvious
+        const seasonalNames = [
+          'Spring Garden Fizz', 'Summer Breeze', 'Autumn Spice', 'Winter Warmth',
+          'Spring Blossom', 'Summer Sunset', 'Fall Harvest', 'Winter Wonderland',
+          'Spring Awakening', 'Summer Solstice', 'Autumn Leaves', 'Winter Frost',
+          'Spring Rain', 'Summer Heat', 'Fall Colors', 'Winter Night',
+          'Spring Delight', 'Summer Paradise', 'Autumn Warmth', 'Winter Solstice'
+        ];
+        return seasonalNames[index % seasonalNames.length];
+      } else {
+        // Custom Fusion - analyze ingredients to create unique custom names
+        const allIngredients = ingredients ? ingredients.join(' ').toLowerCase() : originalName.toLowerCase();
+        
+        // Check for specific ingredient types
+        const hasTropical = allIngredients.includes('pineapple') || allIngredients.includes('coconut') || allIngredients.includes('mango') || allIngredients.includes('passion') || allIngredients.includes('papaya');
+        const hasCitrus = allIngredients.includes('lemon') || allIngredients.includes('lime') || allIngredients.includes('orange') || allIngredients.includes('grapefruit') || allIngredients.includes('citrus');
+        const hasBerries = allIngredients.includes('berry') || allIngredients.includes('strawberry') || allIngredients.includes('raspberry') || allIngredients.includes('blueberry') || allIngredients.includes('blackberry');
+        const hasCoffee = allIngredients.includes('coffee') || allIngredients.includes('espresso') || allIngredients.includes('caffeine');
+        const hasSpice = allIngredients.includes('cinnamon') || allIngredients.includes('ginger') || allIngredients.includes('nutmeg') || allIngredients.includes('clove') || allIngredients.includes('spice');
+        const hasHerbs = allIngredients.includes('mint') || allIngredients.includes('basil') || allIngredients.includes('rosemary') || allIngredients.includes('thyme');
+        const hasChocolate = allIngredients.includes('chocolate') || allIngredients.includes('cocoa');
+        const hasVanilla = allIngredients.includes('vanilla');
+        
+        // Generate name based on ingredients
+        if (hasTropical) {
+          const tropicalNames = ['Tropical Fusion', 'Island Paradise', 'Caribbean Dream', 'Tropical Sunset', 'Beachside Cooler', 'Ocean Breeze', 'Tropical Bliss'];
+          return tropicalNames[index % tropicalNames.length];
+        } else if (hasCitrus && hasBerries) {
+          const citrusBerryNames = ['Citrus Berry Fusion', 'Berry Citrus Blend', 'Zesty Berry Mix', 'Citrus Berry Delight'];
+          return citrusBerryNames[index % citrusBerryNames.length];
+        } else if (hasCitrus) {
+          const citrusNames = ['Citrus Burst', 'Zesty Refresher', 'Citrus Elegance', 'Citrus Fusion', 'Bright Citrus', 'Citrus Delight'];
+          return citrusNames[index % citrusNames.length];
+        } else if (hasBerries) {
+          const berryNames = ['Berry Bliss', 'Mixed Berry Fusion', 'Berry Delight', 'Berry Burst', 'Berry Medley'];
+          return berryNames[index % berryNames.length];
+        } else if (hasCoffee) {
+          const coffeeNames = ['Midnight Blend', 'Dark Roast Fusion', 'Espresso Elegance', 'Coffee Delight', 'Midnight Zest'];
+          return coffeeNames[index % coffeeNames.length];
+        } else if (hasSpice) {
+          const spiceNames = ['Spiced Fusion', 'Aromatic Blend', 'Warm Spice Mix', 'Spiced Delight', 'Aromatic Fusion'];
+          return spiceNames[index % spiceNames.length];
+        } else if (hasHerbs) {
+          const herbNames = ['Herbal Fusion', 'Garden Blend', 'Fresh Herb Mix', 'Herbal Delight', 'Garden Fresh'];
+          return herbNames[index % herbNames.length];
+        } else if (hasChocolate) {
+          const chocolateNames = ['Chocolate Fusion', 'Cocoa Blend', 'Velvet Chocolate', 'Chocolate Delight', 'Cocoa Elegance'];
+          return chocolateNames[index % chocolateNames.length];
+        } else if (hasVanilla) {
+          const vanillaNames = ['Vanilla Fusion', 'Creamy Vanilla', 'Vanilla Blend', 'Smooth Vanilla', 'Vanilla Delight'];
+          return vanillaNames[index % vanillaNames.length];
+        } else {
+          // Default creative custom names
+          const defaultNames = ['Signature Blend', 'Crafted Mix', 'Artisan Creation', 'Premium Fusion', 'Refined Blend', 'Velvet Sunset', 'Aurora Blend', 'Stellar Mix', 'Mountain Peak', 'Crystal Fusion'];
+          return defaultNames[index % defaultNames.length];
+        }
+      }
     };
     
     while (recipes.length < 5) {
       const baseRecipe = recipes[recipes.length - 1];
       const variationIndex = recipes.length - 1;
-      const creativeName = createVariationName(baseRecipe.name, variationIndex);
+      const assignedType = types[recipes.length % types.length];
+      const creativeName = createVariationName(baseRecipe.name, variationIndex, assignedType, baseRecipe.ingredients);
       
       const newRecipe: AIRecipe = {
         name: creativeName,
-        type: types[recipes.length % types.length],
+        type: assignedType,
         ingredients: [...baseRecipe.ingredients],
         instructions: baseRecipe.instructions,
         image: baseRecipe.image

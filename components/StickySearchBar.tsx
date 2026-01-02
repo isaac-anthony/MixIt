@@ -38,8 +38,6 @@ export function StickySearchBar({
   const [internalSearchQuery, setInternalSearchQuery] = useState("");
   const searchQuery = externalSearchQuery !== undefined ? externalSearchQuery : internalSearchQuery;
   const setSearchQuery = onSearchChange || setInternalSearchQuery;
-  const [isOpen, setIsOpen] = useState(false);
-  const [filteredIngredients, setFilteredIngredients] = useState<Ingredient[]>([]);
   const searchRef = useRef<HTMLDivElement>(null);
   const pulseControls = useAnimation();
   const pingControls = useAnimation();
@@ -81,35 +79,6 @@ export function StickySearchBar({
   }, [selectedIngredients.length, pingControls]);
 
 
-  useEffect(() => {
-    // Only filter ingredients as user types (no API calls)
-    if (searchQuery.trim()) {
-      const filtered = ingredients.filter((ing) =>
-        ing.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredIngredients(filtered);
-      setIsOpen(filtered.length > 0);
-    } else {
-      setFilteredIngredients([]);
-      setIsOpen(false);
-    }
-  }, [searchQuery, ingredients]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  const handleSelect = (ingredient: Ingredient) => {
-    onSelectIngredient(ingredient);
-    setSearchQuery("");
-    setIsOpen(false);
-  };
 
   return (
     <div
@@ -151,13 +120,9 @@ export function StickySearchBar({
                     } else {
                       console.log("No search query or ingredients selected");
                     }
-                    
-                    // Close dropdown to clear stage for AI assistant
-                    setIsOpen(false);
                   }
                 }}
                 onFocus={() => {
-                  if (filteredIngredients.length > 0) setIsOpen(true);
                   // Notify parent that search is focused (hide AI assistant)
                   onSearchFocus?.();
                 }}
@@ -183,7 +148,6 @@ export function StickySearchBar({
                 <button
                   onClick={() => {
                     setSearchQuery("");
-                    setIsOpen(false);
                   }}
                   className="absolute right-4 p-2 hover:bg-gray-100 rounded-full transition-colors z-20"
                 >
@@ -245,29 +209,6 @@ export function StickySearchBar({
           </motion.div>
 
         </div>
-
-        {/* Dropdown - appears below search bar in normal document flow */}
-        {isOpen && filteredIngredients.length > 0 && (
-          <div className="mt-4 w-full bg-white/50 backdrop-blur-2xl border border-white/20 rounded-[32px] shadow-[0_30px_80px_rgba(0,0,0,0.2),0_0_60px_rgba(168,85,247,0.25)] max-h-96 overflow-y-auto z-[100] ring-1 ring-black/5 glass-specular">
-            {filteredIngredients.map((ingredient) => (
-              <button
-                key={ingredient.id}
-                onClick={() => handleSelect(ingredient)}
-                className="w-full px-6 py-4 text-left hover:bg-gray-50 transition-colors first:rounded-t-2xl last:rounded-b-2xl flex items-center gap-4"
-              >
-                <img
-                  src={ingredient.image}
-                  alt={ingredient.name}
-                  className="w-10 h-10 rounded object-cover"
-                />
-                <div>
-                  <p className="text-black font-medium">{ingredient.name}</p>
-                  <p className="text-sm text-gray-500 capitalize">{ingredient.category}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
