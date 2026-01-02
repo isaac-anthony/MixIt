@@ -52,11 +52,19 @@ export async function POST(request: NextRequest) {
 CRITICAL REQUIREMENTS:
 1. You MUST return EXACTLY 5 cocktail suggestions in JSON format - NO MORE, NO LESS
 2. You MUST mix the types: include multiple "Classic", "Custom Fusion", and "Seasonal" drinks (e.g., 2 Classic, 2 Custom Fusion, 1 Seasonal)
-3. Each recipe MUST include FULL, DETAILED step-by-step instructions for making the drink
-4. Instructions should be comprehensive and include all preparation steps (mixing, shaking, straining, garnishing, etc.)
-5. If the user has limited ingredients, be creative and suggest variations using those ingredients
-6. **INGREDIENTS MUST ALWAYS INCLUDE PRECISE MEASUREMENTS**: Every ingredient must have exact measurements in ounces (oz), dashes, teaspoons (tsp), or tablespoons (tbsp). Format: "2 oz Vodka", "1 oz Lime Juice", "0.5 oz Simple Syrup", "2 dashes Angostura Bitters", etc.
-7. **INSTRUCTIONS MUST BE COMPLETE**: Include every step from preparation to serving: glass preparation (rimming, chilling), mixing method (shake, stir, build), timing (how long to shake/stir), straining, garnishing, and serving instructions.
+3. **EVERY RECIPE MUST HAVE ALL REQUIRED FIELDS**: name, type, ingredients (array), instructions (string), and image (URL)
+4. **INGREDIENTS MUST ALWAYS INCLUDE PRECISE MEASUREMENTS**: Every ingredient must have exact measurements in ounces (oz), dashes, teaspoons (tsp), or tablespoons (tbsp). Format: "2.0 oz Premium Vodka", "1.0 oz Fresh Lime Juice", "0.5 oz Simple Syrup", "2 dashes Angostura Bitters", "1 tsp Sugar", etc. NEVER use vague terms like "some", "a splash", "to taste", or "a dash" without a number.
+5. **INSTRUCTIONS MUST BE COMPLETE AND DETAILED**: Include EVERY step from preparation to serving:
+   - Glass preparation (rimming, chilling, warming)
+   - Ingredient preparation (muddling, juicing, etc.)
+   - Mixing method (shake, stir, build, muddle)
+   - Timing (how long to shake/stir - e.g., "15-20 seconds", "30 seconds")
+   - Straining method (Hawthorne strainer, fine strainer, etc.)
+   - Garnishing (what, where, how)
+   - Serving instructions (immediately, chilled, etc.)
+   Write instructions as complete sentences separated by periods. Each sentence should be a distinct step.
+6. **INSTRUCTIONS FORMAT**: Write instructions as a single string with multiple sentences. Each sentence should be a complete step. Example: "Chill a coupe glass by filling it with ice and water. Set aside. Fill a cocktail shaker with fresh ice cubes. Add 2.0 oz of premium vodka, 1.0 oz of fresh lime juice, and 0.5 oz of simple syrup to the shaker. Secure the lid and shake vigorously for 15-20 seconds until the shaker is cold to the touch. Discard the ice and water from the coupe glass. Strain the cocktail into the chilled coupe glass using a Hawthorne strainer. Garnish with a lime wedge on the rim of the glass. Serve immediately."
+7. If the user has limited ingredients, be creative and suggest variations using those ingredients
 8. **SEASONAL DRINK NAMES**: Any drink with type "Seasonal" MUST have a name that resonates with a specific season (Spring, Summer, Fall/Autumn, or Winter). Examples: "Spring Garden Fizz", "Summer Breeze", "Autumn Spice", "Winter Warmth", "Spring Blossom", "Summer Sunset", "Fall Harvest", "Winter Wonderland". The name should evoke the season's characteristics, ingredients, or mood.
 
 You MUST return ONLY valid JSON with this EXACT structure (no additional text before or after):
@@ -100,13 +108,21 @@ You MUST return ONLY valid JSON with this EXACT structure (no additional text be
   ]
 }
 
-IMPORTANT: 
-- "type" must be exactly one of: "Classic", "Custom Fusion", or "Seasonal"
-- "instructions" must be FULL and DETAILED, including all steps from preparation to serving (glass preparation, mixing method, timing, straining, garnishing, serving)
-- "ingredients" MUST include precise measurements for EVERY ingredient (e.g., "2.0 oz", "1.5 oz", "0.5 oz", "2 dashes", "1 tsp", etc.). Never use vague terms like "some", "a splash", or "to taste"
-- **SEASONAL DRINK NAMES**: Drinks with type "Seasonal" MUST have names that resonate with Spring, Summer, Fall/Autumn, or Winter. Examples: "Spring Garden Fizz", "Summer Breeze", "Autumn Harvest", "Winter Warmth", "Spring Blossom", "Summer Sunset", "Fall Spice", "Winter Wonderland". The name should evoke seasonal characteristics, ingredients, or mood.
-- Use the available ingredients provided by the user
-- You MUST return EXACTLY 5 recipes - count them before returning. If you cannot think of 5 unique cocktails, create variations with different proportions or additional ingredients.
+VALIDATION CHECKLIST - Before returning, verify each recipe has:
+✓ "name": A unique, descriptive cocktail name (string)
+✓ "type": Exactly one of "Classic", "Custom Fusion", or "Seasonal" (string)
+✓ "ingredients": Array of strings, each with precise measurements (e.g., ["2.0 oz Vodka", "1.0 oz Lime Juice"])
+✓ "instructions": Complete string with all steps from glass prep to serving, written as sentences separated by periods
+✓ "image": Valid Unsplash URL for cocktail images
+
+CRITICAL VALIDATION RULES:
+- Every ingredient MUST have a number and unit (oz, dash, tsp, tbsp, ml, cl)
+- Instructions MUST be at least 3 sentences long, covering: preparation, mixing, straining, garnishing, serving
+- Instructions MUST be written as a single string with sentences separated by periods
+- Do NOT use numbered lists (1., 2., 3.) in instructions - use sentences instead
+- Do NOT use bullet points (-) in instructions - use sentences instead
+- Use the available ingredients provided by the user when possible
+- You MUST return EXACTLY 5 recipes - count them before returning
 - Do NOT include any text before or after the JSON. Return ONLY the JSON object.`
             : `You are a professional mixologist assistant for MixIt, a cocktail recipe app. Help users with:
 - Finding cocktail ingredients
@@ -121,7 +137,7 @@ Be concise, helpful, and friendly.`
           content: `${query}${ingredients && ingredients.length > 0 ? `\n\nAvailable ingredients: ${ingredients.map((i: { name: string }) => i.name).join(", ")}` : ""}`
         }
       ],
-      max_tokens: isRecipeQuery ? 2000 : 300,
+      max_tokens: isRecipeQuery ? 3000 : 300,
       temperature: 0.7,
       response_format: isRecipeQuery ? { type: "json_object" } : undefined
     });

@@ -35,38 +35,65 @@ interface AIAssistantProps {
 export function AIAssistant({ response, isLoading, isVisible, onViewRecipe }: AIAssistantProps) {
   const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
+  // Validate that a recipe has all required fields
+  const validateRecipe = (recipe: any): recipe is AIRecipe => {
+    if (!recipe || typeof recipe !== 'object') return false;
+    
+    // Check required fields
+    const hasName = recipe.name && typeof recipe.name === 'string' && recipe.name.trim().length > 0;
+    const hasIngredients = Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0;
+    const hasInstructions = recipe.instructions && typeof recipe.instructions === 'string' && recipe.instructions.trim().length > 10;
+    
+    // Optional fields
+    const hasType = !recipe.type || ['Classic', 'Custom Fusion', 'Seasonal'].includes(recipe.type);
+    
+    return hasName && hasIngredients && hasInstructions && hasType;
+  };
+
   // Parse AI response to extract recipes
   const parseRecipes = (): AIRecipe[] => {
     if (!response) return [];
 
+    let recipes: any[] = [];
+
     // If response is already structured object with recipes array
     if (typeof response === 'object' && !Array.isArray(response)) {
       if (response.recipes && Array.isArray(response.recipes)) {
-        return response.recipes;
+        recipes = response.recipes;
       }
       // Sometimes the response itself might be the recipes array
-      if (Array.isArray(response)) {
-        return response;
+      else if (Array.isArray(response)) {
+        recipes = response;
       }
     }
 
     // If response is a string, try to parse it as JSON
-    if (typeof response === 'string') {
+    if (typeof response === 'string' && recipes.length === 0) {
       try {
         // Try to find JSON in the string (might have extra text)
         const jsonMatch = response.match(/\{[\s\S]*"recipes"[\s\S]*\}/);
         const jsonString = jsonMatch ? jsonMatch[0] : response;
         const parsed = JSON.parse(jsonString);
         if (parsed.recipes && Array.isArray(parsed.recipes)) {
-          return parsed.recipes;
+          recipes = parsed.recipes;
+        } else if (Array.isArray(parsed)) {
+          recipes = parsed;
         }
       } catch (e) {
         // If JSON parsing fails, try to extract recipes from text format
-        return extractRecipesFromText(response);
+        recipes = extractRecipesFromText(response);
       }
     }
 
-    return [];
+    // Validate and filter recipes
+    const validRecipes = recipes.filter(validateRecipe);
+    
+    // If we have invalid recipes, log warnings
+    if (validRecipes.length < recipes.length) {
+      console.warn(`Filtered out ${recipes.length - validRecipes.length} invalid recipes`);
+    }
+    
+    return validRecipes;
   };
 
   // Fallback: Extract recipe information from text format
@@ -286,74 +313,152 @@ export function AIAssistant({ response, isLoading, isVisible, onViewRecipe }: AI
   const hasStructuredRecipes = recipes.length > 0;
   const isTextResponse = typeof response === 'string' && !hasStructuredRecipes;
 
+  // Helper function to parse ingredient with measurement
+  const parseIngredient = (ing: string): { name: string; amount: string } => {
+    // Handle various formats:
+    // "2.0 oz Premium Vodka" -> { name: "Premium Vodka", amount: "2.0 oz" }
+    // "2 oz Vodka" -> { name: "Vodka", amount: "2 oz" }
+    // "2 dashes Angostura Bitters" -> { name: "Angostura Bitters", amount: "2 dashes" }
+    // "1 tsp Sugar" -> { name: "Sugar", amount: "1 tsp" }
+    // "Ice cubes" -> { name: "Ice cubes", amount: "" }
+    
+    const trimmed = ing.trim();
+    
+    // Pattern 1: Number + unit + ingredient name
+    const measurementPattern = /^(\d+\.?\d*)\s*(oz|dash|dashes|tsp|tbsp|tablespoon|teaspoon|ml|cl|mL|cL)\s+(.+)$/i;
+    const match = trimmed.match(measurementPattern);
+    
+    if (match) {
+      const amount = match[1];
+      const unit = match[2].toLowerCase();
+      const name = match[3].trim();
+      
+      // Normalize unit abbreviations
+      const normalizedUnit = unit === 'dashes' ? 'dashes' : 
+                             unit === 'dash' ? 'dash' :
+                             unit === 'tsp' || unit === 'teaspoon' ? 'tsp' :
+                             unit === 'tbsp' || unit === 'tablespoon' ? 'tbsp' :
+                             unit === 'ml' || unit === 'ml' ? 'ml' :
+                             unit === 'cl' || unit === 'cl' ? 'cl' :
+                             'oz';
+      
+      return {
+        name: name,
+        amount: `${amount} ${normalizedUnit}`
+      };
+    }
+    
+    // Pattern 2: Check if it starts with a number but no clear unit (assume oz)
+    const numberPattern = /^(\d+\.?\d*)\s+(.+)$/;
+    const numberMatch = trimmed.match(numberPattern);
+    if (numberMatch && !trimmed.match(/\s+(oz|dash|tsp|tbsp|ml|cl)\s+/i)) {
+      return {
+        name: numberMatch[2].trim(),
+        amount: `${numberMatch[1]} oz`
+      };
+    }
+    
+    // Pattern 3: No measurement, just ingredient name
+    return {
+      name: trimmed,
+      amount: ''
+    };
+  };
+
   const handleViewRecipe = (recipe: AIRecipe) => {
     if (!onViewRecipe) return;
     
+    // Validate recipe has required fields
+    if (!recipe.name || !recipe.ingredients || recipe.ingredients.length === 0 || !recipe.instructions) {
+      console.warn('Recipe missing required fields:', recipe);
+      return;
+    }
+    
+    // Parse ingredients with measurements
+    const detailedIngredients = recipe.ingredients.map(parseIngredient);
+    
+    // Extract ingredient names (without measurements) for the ingredients array
+    const ingredientNames = detailedIngredients.map(ing => ing.name);
+    
+    // Parse instructions into steps
+    const parseInstructions = (instructions: string): string[] => {
+      if (!instructions || instructions.trim().length === 0) {
+        return ['Combine all ingredients in a shaker with ice.', 'Shake vigorously for 15 seconds.', 'Strain into a chilled glass.', 'Garnish and serve.'];
+      }
+      
+      // Split by periods, but be smart about it
+      // First, normalize the instructions
+      let normalized = instructions.trim();
+      
+      // Remove numbered lists (1., 2., etc.) and convert to sentences
+      normalized = normalized.replace(/^\d+\.\s*/gm, '');
+      
+      // Remove bullet points
+      normalized = normalized.replace(/^[-•]\s*/gm, '');
+      
+      // Split by periods, but keep sentences that might have abbreviations
+      let stepList = normalized
+        .split(/\.\s+/)
+        .map(s => s.trim())
+        .filter(s => s.length > 0)
+        .map(s => {
+          // Ensure proper capitalization
+          let step = s.trim();
+          // Remove any remaining leading numbers or bullets
+          step = step.replace(/^[\d\-•]\s*/, '').trim();
+          // Ensure it ends with punctuation
+          if (!step.endsWith('.') && !step.endsWith('!') && !step.endsWith('?')) {
+            step = step + '.';
+          }
+          // Capitalize first letter
+          if (step.length > 0) {
+            step = step.charAt(0).toUpperCase() + step.slice(1);
+          }
+          return step;
+        })
+        .filter(s => s.length > 3); // Filter out very short fragments
+      
+      // If we don't have enough steps, try splitting by other patterns
+      if (stepList.length < 3) {
+        // Try splitting by newlines
+        const newlineSplit = instructions.split(/\n+/).map(s => s.trim()).filter(s => s.length > 0);
+        if (newlineSplit.length > stepList.length) {
+          stepList = newlineSplit.map(s => {
+            s = s.replace(/^[\d\-•]\s*/, '').trim();
+            if (!s.endsWith('.') && !s.endsWith('!')) s = s + '.';
+            return s.charAt(0).toUpperCase() + s.slice(1);
+          }).filter(s => s.length > 3);
+        }
+      }
+      
+      // Ensure we have at least 3 steps
+      if (stepList.length === 0) {
+        stepList = ['Combine all ingredients in a shaker with ice.', 'Shake vigorously for 15 seconds.', 'Strain into a chilled glass.', 'Garnish and serve.'];
+      } else if (stepList.length < 3) {
+        // Add default steps if needed
+        if (!stepList.some(s => s.toLowerCase().includes('shake') || s.toLowerCase().includes('stir'))) {
+          stepList.push('Shake or stir well to combine.');
+        }
+        if (!stepList.some(s => s.toLowerCase().includes('strain'))) {
+          stepList.push('Strain into a chilled glass.');
+        }
+        if (!stepList.some(s => s.toLowerCase().includes('garnish') || s.toLowerCase().includes('serve'))) {
+          stepList.push('Garnish and serve.');
+        }
+      }
+      
+      return stepList;
+    };
+    
     // Convert AI recipe to Recipe format for modal
     const recipeData: Recipe = {
-      id: recipe.name.toLowerCase().replace(/\s+/g, '-'),
-      name: recipe.name,
+      id: recipe.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+      name: recipe.name || 'Unnamed Cocktail',
       category: 'spirits',
-      type: (recipe.type as 'Classic' | 'Custom Fusion' | 'Seasonal') || 'Custom Fusion', // Add type for display in modal
-      ingredients: recipe.ingredients.map(ing => {
-        // Extract ingredient name (remove measurements)
-        return ing.replace(/^\d+\.?\d*\s*(oz|dash|dashes|tsp|tbsp|ml|cl)\s*/i, '').trim();
-      }),
-      detailedIngredients: recipe.ingredients.map(ing => {
-        // Parse "2 oz Vodka" into { name: "Vodka", amount: "2 oz" }
-        const match = ing.match(/^(\d+\.?\d*)\s*(oz|dash|dashes|tsp|tbsp|ml|cl)?\s*(.+)$/i);
-        if (match) {
-          return {
-            name: match[3].trim(),
-            amount: `${match[1]}${match[2] ? ` ${match[2]}` : ' oz'}`
-          };
-        }
-        return { name: ing, amount: '' };
-      }),
-      steps: (() => {
-        // Split instructions into steps
-        let stepList = recipe.instructions
-          .split(/\.\s+/)
-          .filter(s => s.trim().length > 0)
-          .map(s => {
-            // Remove any leading numbers and periods (e.g., "1. ", "2. ", "01. ")
-            let trimmed = s.trim().replace(/^\d+\.\s*/, '').trim();
-            // Remove any leading dashes or bullets
-            trimmed = trimmed.replace(/^[-•]\s*/, '').trim();
-            // Ensure it ends with proper punctuation
-            trimmed = trimmed.endsWith('.') || trimmed.endsWith('!') ? trimmed : trimmed + '.';
-            return trimmed;
-          })
-          .filter(s => s.length > 3); // Filter out very short fragments
-        
-        // If steps don't start with action words, try to fix them
-        const actionWords = ['fill', 'add', 'combine', 'mix', 'shake', 'stir', 'pour', 'strain', 'garnish', 'serve', 'rim', 'place', 'top', 'chill', 'muddle'];
-        
-        return stepList.map((step, index) => {
-          const stepLower = step.toLowerCase().trim();
-          // Check if step starts with an action word
-          const startsWithAction = actionWords.some(word => stepLower.startsWith(word));
-          
-          if (!startsWithAction && step.length > 0) {
-            // If it doesn't start with an action word, try to find the first verb
-            // or prepend a common action word based on context
-            if (index === 0) {
-              // First step usually starts with "Fill" or "Combine"
-              if (!stepLower.match(/^(fill|combine|add|place|pour)/)) {
-                return `Fill a glass or shaker with ice. ${step.charAt(0).toUpperCase() + step.slice(1)}`;
-              }
-            } else if (index === stepList.length - 1) {
-              // Last step usually starts with "Garnish" or "Serve"
-              if (!stepLower.match(/^(garnish|serve|top|finish)/)) {
-                return `Garnish and serve. ${step.charAt(0).toUpperCase() + step.slice(1)}`;
-              }
-            }
-          }
-          
-          // Capitalize first letter if needed
-          return step.charAt(0).toUpperCase() + step.slice(1);
-        });
-      })(),
+      type: (recipe.type as 'Classic' | 'Custom Fusion' | 'Seasonal') || 'Custom Fusion',
+      ingredients: ingredientNames,
+      detailedIngredients: detailedIngredients,
+      steps: parseInstructions(recipe.instructions),
       image: recipe.image || 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=400&h=400&fit=crop&q=80',
       servingSize: '1 serving',
       glassware: 'Cocktail Glass',
